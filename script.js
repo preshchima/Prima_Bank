@@ -9,6 +9,10 @@ const modal = document.querySelector(".modal");
 const overlay = document.querySelector(".overlay");
 const navContainer = document.querySelector(".nav");
 const header = document.querySelector(".header");
+const lazyImgs = document.querySelectorAll("img[data-src]");
+const tabContainer = document.querySelector(".operations__tab-container");
+const tabsBtn = document.querySelectorAll(".operations__tab");
+const tabsContent = document.querySelectorAll(".operations__content");
 
 //smooth scrolling
 btnScrollTo.addEventListener("click", function (e) {
@@ -23,7 +27,6 @@ linkContainer.addEventListener("click", function (e) {
     !link.classList.contains("btn--show-modal")
   ) {
     const href = link.getAttribute("href");
-    console.log(href);
 
     document.querySelector(href).scrollIntoView({ behavior: "smooth" });
   }
@@ -91,3 +94,44 @@ const headerIntersection = new IntersectionObserver(headerObserver, {
 });
 
 headerIntersection.observe(header);
+
+//lazy loading images
+const imgObserver = function (entries, observe) {
+  entries.forEach(entry => {
+    lazyImgs.forEach(img => {
+      if (entry.isIntersecting) {
+        img.src = img.getAttribute("data-src");
+        img.addEventListener("load", function () {
+          img.classList.remove("lazy-img");
+        });
+
+        observe.unobserve(img);
+      }
+    });
+  });
+};
+
+const imgIntersection = new IntersectionObserver(imgObserver, {
+  root: null,
+  threshold: 0,
+  rootMargin: "100px",
+});
+
+lazyImgs.forEach(img => imgIntersection.observe(img));
+
+//tabbed section
+tabContainer.addEventListener("click", function (e) {
+  const btn = e.target.closest(".operations__tab");
+  if (!btn) return;
+  //remove active class
+  tabsBtn.forEach(btn => btn.classList.remove("operations__tab--active"));
+  tabsContent.forEach(content =>
+    content.classList.remove("operations__content--active")
+  );
+  //add active class
+  btn.classList.add("operations__tab--active");
+  const index = btn.dataset.tab;
+  document
+    .querySelector(`.operations__content--${index}`)
+    .classList.add("operations__content--active");
+});
