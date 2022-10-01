@@ -8,6 +8,7 @@ const btnCloseModal = document.querySelector(".btn--close-modal");
 const modal = document.querySelector(".modal");
 const overlay = document.querySelector(".overlay");
 const navContainer = document.querySelector(".nav");
+const header = document.querySelector(".header");
 
 //smooth scrolling
 btnScrollTo.addEventListener("click", function (e) {
@@ -68,3 +69,25 @@ const handleFadeIn = function (e) {
 linkContainer.addEventListener("mouseover", handleFadeIn.bind(0.5));
 
 linkContainer.addEventListener("mouseout", handleFadeIn.bind(1));
+
+//sticky navigation
+const navContainerHeight = `-${getComputedStyle(navContainer).height}`;
+
+const headerObserver = function (entries) {
+  entries.forEach(entry => {
+    if (!entry) return;
+    if (!entry.isIntersecting) {
+      navContainer.classList.add("sticky");
+    } else {
+      navContainer.classList.remove("sticky");
+    }
+  });
+};
+
+const headerIntersection = new IntersectionObserver(headerObserver, {
+  root: null,
+  threshold: 0,
+  rootMargin: navContainerHeight,
+});
+
+headerIntersection.observe(header);
