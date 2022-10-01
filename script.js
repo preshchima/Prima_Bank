@@ -36,7 +36,7 @@ linkContainer.addEventListener("click", function (e) {
   }
 });
 
-//Display sign up modal
+//Display sign up modal window
 const openModal = e => {
   e.preventDefault();
   modal.classList.remove("hidden");
@@ -67,7 +67,7 @@ const handleFadeIn = function (e) {
     nav.querySelectorAll(".nav__link").forEach(link => {
       if (link !== currentlink) {
         link.style.opacity = this;
-        logo.style.opacity = this;
+        logo.style.opacity = this; //
       }
     });
   }
@@ -78,9 +78,9 @@ linkContainer.addEventListener("mouseover", handleFadeIn.bind(0.5));
 linkContainer.addEventListener("mouseout", handleFadeIn.bind(1));
 
 //sticky navigation
-const navContainerHeight = `-${getComputedStyle(navContainer).height}`;
+const navContainerHeight = getComputedStyle(navContainer).height;
 
-const headerObserver = function (entries) {
+const stickyNav = function (entries) {
   entries.forEach(entry => {
     if (!entry) return;
     if (!entry.isIntersecting) {
@@ -91,31 +91,30 @@ const headerObserver = function (entries) {
   });
 };
 
-const headerIntersection = new IntersectionObserver(headerObserver, {
+const headerIntersection = new IntersectionObserver(stickyNav, {
   root: null,
   threshold: 0,
-  rootMargin: navContainerHeight,
+  rootMargin: `-${navContainerHeight}`,
 });
 
 headerIntersection.observe(header);
 
 //lazy loading images
-const imgObserver = function (entries, observe) {
+const loadImg = function (entries, observer) {
   entries.forEach(entry => {
-    lazyImgs.forEach(img => {
-      if (entry.isIntersecting) {
-        img.src = img.getAttribute("data-src");
-        img.addEventListener("load", function () {
-          img.classList.remove("lazy-img");
-        });
+    if (entry.isIntersecting) {
+      const img = entry.target;
+      img.src = img.getAttribute("data-src");
+      img.addEventListener("load", function () {
+        img.classList.remove("lazy-img");
+      });
 
-        observe.unobserve(img);
-      }
-    });
+      observer.unobserve(entry.target);
+    }
   });
 };
 
-const imgIntersection = new IntersectionObserver(imgObserver, {
+const imgIntersection = new IntersectionObserver(loadImg, {
   root: null,
   threshold: 0,
   rootMargin: "100px",
@@ -143,15 +142,15 @@ tabContainer.addEventListener("click", function (e) {
 //slider and pagination
 const slider = () => {
   let currentSlide = 0;
+
   const createDots = () => {
-    slides.forEach((slide, i) => {
+    slides.forEach((_, i) => {
       const html = `
-              <button class='dots__dot ' data-dot=${i}></button>
+              <button class='dots__dot' data-dot='${i}'></button>
               `;
       dotContainer.insertAdjacentHTML("beforeend", html);
     });
   };
-  createDots();
 
   const activateDot = function (slide) {
     document.querySelectorAll(".dots__dot").forEach(dot => {
@@ -160,19 +159,15 @@ const slider = () => {
     document
       .querySelector(`.dots__dot[data-dot='${slide}']`)
       .classList.add("dots__dot--active");
+    currentSlide = +slide;
   };
 
   const goToSlide = currSlide => {
     slides.forEach((slide, i) => {
-      slide.style.transform = `translateX(${100 * (i - currSlide) - 0}%)`;
+      slide.style.transform = `translateX(${100 * (i - currSlide)}%)`;
     });
+    currentSlide = currSlide;
   };
-
-  const init = () => {
-    goToSlide(currentSlide);
-    activateDot(currentSlide);
-  };
-  init();
 
   const nextSlide = function () {
     if (currentSlide === slides.length - 1) {
@@ -189,18 +184,61 @@ const slider = () => {
     goToSlide(currentSlide);
     activateDot(currentSlide);
   };
+  const init = () => {
+    createDots();
+
+    goToSlide(0);
+    activateDot(0);
+  };
+  init();
 
   btnRight.addEventListener("click", nextSlide);
 
   btnLeft.addEventListener("click", previousSlide);
 
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowLeft") previousSlide();
+    e.key === "ArrowRight" && nextSlide();
+  });
   dotContainer.addEventListener("click", function (e) {
     if (e.target.classList.contains("dots__dot")) {
-      currentSlide = e.target.dataset.dot;
+      const { dot } = e.target.dataset;
 
-      goToSlide(currentSlide);
-      activateDot(currentSlide);
+      goToSlide(dot);
+      activateDot(dot);
     }
   });
 };
 slider();
+
+const revealSection = (entries, observer) => {
+  const [entry] = entries;
+  if (entry.isIntersecting) {
+    entry.target.classList.remove("section--hidden");
+    observer.unobserve(entry.target);
+  }
+};
+
+//revealing sections
+const allSections = document.querySelectorAll(".section");
+const sectionObserver = new IntersectionObserver(revealSection, {
+  root: null,
+  threshold: 0.15,
+});
+
+allSections.forEach(section => {
+  sectionObserver.observe(section);
+  section.classList.add("section--hidden");
+});
+
+//display cookie message
+const message = document.createElement("div");
+message.classList.add("cookie-message");
+message.innerHTML = `We use cookies for improved functionality and analytics. <button class="btn btn--close-cookie">Got it!</button>`;
+header.append(message);
+
+document
+  .querySelector(".btn--close-cookie")
+  .addEventListener("click", function () {
+    message.remove();
+  });
